@@ -1,0 +1,59 @@
+plugins {
+    id("com.android.library")
+    id("kotlin-android")
+    id("com.google.devtools.ksp")
+    id("kotlinx-serialization")
+}
+
+dependencies {
+    implementation(project(":retrograde-util"))
+    implementation(project(":omnidroid-chd"))
+    implementation(project(":omnidroid-touchinput"))
+
+    api(deps.libs.androidx.lifecycle.commonJava8)
+
+    implementation(deps.libs.arch.work.runtime)
+    implementation(deps.libs.arch.work.runtimeKtx)
+    implementation(deps.libs.androidx.appcompat.appcompat)
+    implementation(deps.libs.androidx.leanback.leanbackPreference)
+    implementation(deps.libs.androidx.ktx.collection)
+    implementation(deps.libs.androidx.ktx.core)
+    implementation(deps.libs.androidx.ktx.coreKtx)
+    implementation(deps.libs.androidx.fragment.fragment)
+    implementation(deps.libs.androidx.fragment.ktx)
+    implementation(deps.libs.androidx.activity.activity)
+    implementation(deps.libs.androidx.activity.activityKtx)
+    implementation(deps.libs.androidx.ktx.coreKtx)
+    implementation(deps.libs.androidx.paging.common)
+    implementation(deps.libs.androidx.paging.runtime)
+    implementation(deps.libs.androidx.room.common)
+    implementation(deps.libs.androidx.room.runtime)
+    implementation(deps.libs.androidx.room.ktx)
+    implementation(deps.libs.androidx.room.paging)
+    implementation(deps.libs.androidx.documentfile)
+    implementation(deps.libs.hilt.android)
+    implementation(deps.libs.okHttp3)
+    implementation(deps.libs.okio)
+    implementation(deps.libs.retrofit)
+    implementation(deps.libs.kotlin.serialization)
+    implementation(deps.libs.kotlin.serializationJson)
+    implementation(deps.libs.harmony)
+    implementation(deps.libs.material)
+    implementation(deps.libs.kotlinxCoroutinesAndroid)
+    implementation(deps.libs.flowPreferences)
+
+    ksp(deps.libs.androidx.room.compiler)
+
+    testImplementation("junit:junit:4.13.2")
+}
+
+android {
+    defaultConfig {
+        javaCompileOptions {
+            annotationProcessorOptions {
+                argument("room.schemaLocation", "$projectDir/schemas")
+            }
+        }
+    }
+    namespace = "com.omnidroid.lib"
+}

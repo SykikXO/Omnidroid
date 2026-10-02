@@ -1,0 +1,48 @@
+build/
+out/
+dist/
+bin/
+gen/
+captures/
+classes/
+projectFilesBackup/
+project.properties
+.DS_Store
+.idea
+*.iml
+*.iws
+*.swp
+.cxx
+.gradle
+.externalNativeBuild
+local.properties
+
+# Signing material — never commit private keys or passwords
+*.jks
+*.keystore
+*.keystore.asc
+release.keystore.asc
+signing.properties
+.env
+.env.*
+
+# Private native engine source (kept in separate private repo)
+libretrodroid/
+tmp-libretrodroid/
+tmp-core-test/
+
+# Logs & error reports
+*.log
+bugreport*.zip
+.kotlin/
+
+# Backups & internal notes
+*.bak
+*.bak-*
+debug.keystore.bak*
+implementation_plan.md
+reddit-followup.md
+
+# Wii U title keys (shipped only as omnidroid-cores/assets/cemu.zip)
+keys.txt
+

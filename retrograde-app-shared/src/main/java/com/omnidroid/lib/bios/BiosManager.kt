@@ -1,0 +1,298 @@
+package com.omnidroid.lib.bios
+
+import com.omnidroid.common.files.safeDelete
+import com.omnidroid.common.kotlin.associateByNotNull
+import com.omnidroid.common.kotlin.writeToFile
+import com.omnidroid.lib.library.SystemCoreConfig
+import com.omnidroid.lib.library.SystemID
+import com.omnidroid.lib.library.db.entity.Game
+import com.omnidroid.lib.storage.DirectoriesManager
+import com.omnidroid.lib.storage.StorageFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import timber.log.Timber
+import java.io.File
+import java.io.InputStream
+
+class BiosManager(private val directoriesManager: DirectoriesManager) {
+    private val crcLookup = SUPPORTED_BIOS.associateByNotNull { it.externalCRC32 }
+    private val nameLookup = SUPPORTED_BIOS.associateByNotNull { it.externalName }
+
+    fun getMissingBiosFiles(
+        coreConfig: SystemCoreConfig,
+        game: Game,
+    ): List<String> {
+        val regionalBiosFiles = coreConfig.regionalBIOSFiles
+        val systemDir = directoriesManager.getSystemDirectory()
+
+        fun present(biosName: String): Boolean {
+            return File(systemDir, biosName).exists() ||
+                File(systemDir, "pcsx2/bios/$biosName").exists()
+        }
+
+        val gameLabels = regionLabels(game.title)
+        val matchedRegions = gameLabels.intersect(regionalBiosFiles.keys)
+        Timber.d("Found game labels: $gameLabels matched=$matchedRegions")
+
+        // Prefer the BIOS for the title's region(s). When the region is unknown, only the
+        // core's default requiredBIOSFiles apply — never "every regional BIOS".
+        val required =
+            if (matchedRegions.isNotEmpty()) {
+                matchedRegions.mapNotNull { regionalBiosFiles[it] }.distinct()
+            } else {
+                coreConfig.requiredBIOSFiles
+            }
+
+        // Multi-region titles (e.g. "USA, Europe") only need one of the matched BIOS files.
+        if (matchedRegions.size > 1 && required.any(::present)) {
+            return emptyList()
+        }
+
+        return required.filterNot(::present)
+    }
+
+    private fun regionLabels(title: String): Set<String> {
+        return Regex("""\(([^)]+)\)""")
+            .findAll(title)
+            .flatMap { match -> match.groupValues[1].split(',', '/', '+') }
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .toSet()
+    }
+
+    fun deleteBiosBefore(timestampMs: Long) {
+        Timber.i("Pruning old bios files")
+        val systemDir = directoriesManager.getSystemDirectory()
+        // Only prune scan-imported copies in the system root. Asset-managed copies under
+        // pcsx2/bios/ must survive rescans or PS2 loses its downloaded BIOS every index.
+        SUPPORTED_BIOS
+            .map { File(systemDir, it.libretroFileName) }
+            .filter { it.exists() && it.lastModified() < normalizeTimestamp(timestampMs) }
+            .forEach {
+                Timber.d("Pruning old bios file: ${it.path}")
+                it.safeDelete()
+            }
+    }
+
+    private fun isBiosPresent(systemDir: File, bios: Bios): Boolean {
+        if (File(systemDir, bios.libretroFileName).exists() ||
+            File(systemDir, "pcsx2/bios/${bios.libretroFileName}").exists()
+        ) {
+            return true
+        }
+        if (bios.externalName != null &&
+            (File(systemDir, bios.externalName).exists() || File(systemDir, "pcsx2/bios/${bios.externalName}").exists())
+        ) {
+            return true
+        }
+        if (bios.systemID == SystemID.PS2) {
+            val pcsx2BiosDir = File(systemDir, "pcsx2/bios")
+            val model = bios.libretroFileName.removePrefix("scph").removeSuffix(".bin")
+            fun matchesModel(f: File) = f.name.contains(model, ignoreCase = true) && f.name.endsWith(".bin", ignoreCase = true)
+
+            if (systemDir.listFiles()?.any { matchesModel(it) } == true) return true
+            if (pcsx2BiosDir.exists() && pcsx2BiosDir.listFiles()?.any { matchesModel(it) } == true) return true
+        }
+        return false
+    }
+
+    @Deprecated("Use the suspend variant")
+    fun getBiosInfo(): BiosInfo {
+        val systemDir = directoriesManager.getSystemDirectory()
+        val bios =
+            SUPPORTED_BIOS.groupBy {
+                isBiosPresent(systemDir, it)
+            }.withDefault { listOf() }
+
+        return BiosInfo(bios.getValue(true), bios.getValue(false))
+    }
+
+    suspend fun getBiosInfoAsync(): BiosInfo =
+        withContext(Dispatchers.IO) {
+            getBiosInfo()
+        }
+
+    fun tryAddBiosAfter(
+        storageFile: StorageFile,
+        inputStream: InputStream,
+        timestampMs: Long,
+    ): Boolean {
+        val bios = findByCRC(storageFile) ?: findByName(storageFile) ?: return false
+
+        Timber.i("Importing bios file: $bios")
+
+        val biosFile = File(directoriesManager.getSystemDirectory(), bios.libretroFileName)
+        biosFile.parentFile?.mkdirs()
+        if (biosFile.exists() && biosFile.setLastModified(normalizeTimestamp(timestampMs))) {
+            Timber.d("Bios file already present. Updated last modification date.")
+        } else {
+            Timber.d("Bios file not available. Copying new file.")
+            inputStream.writeToFile(biosFile)
+        }
+
+        if (bios.systemID == SystemID.PS2) {
+            try {
+                val pcsx2BiosDir = File(directoriesManager.getSystemDirectory(), "pcsx2/bios")
+                pcsx2BiosDir.mkdirs()
+                val pcsx2BiosFile = File(pcsx2BiosDir, bios.libretroFileName)
+                biosFile.copyTo(pcsx2BiosFile, overwrite = true)
+                Timber.d("Synced PS2 bios to pcsx2/bios/${bios.libretroFileName}")
+            } catch (e: Exception) {
+                Timber.e(e, "Error syncing PS2 bios to pcsx2/bios")
+            }
+        }
+        return true
+    }
+
+    private fun findByCRC(storageFile: StorageFile): Bios? {
+        return crcLookup[storageFile.crc]
+    }
+
+    private fun findByName(storageFile: StorageFile): Bios? {
+        return nameLookup[storageFile.name]
+    }
+
+    fun matchesBiosCrc(crc: String?): Boolean {
+        return crc != null && crcLookup.containsKey(crc)
+    }
+
+    private fun normalizeTimestamp(timestamp: Long) = (timestamp / 1000) * 1000
+
+    data class BiosInfo(val detected: List<Bios>, val notDetected: List<Bios>)
+
+    companion object {
+        const val MAX_BIOS_CANDIDATE_BYTES = 4L * 1024 * 1024
+
+        fun isKnownBiosName(name: String): Boolean {
+            return SUPPORTED_BIOS.any { bios ->
+                bios.libretroFileName.equals(name, ignoreCase = true) ||
+                    bios.externalName?.equals(name, ignoreCase = true) == true
+            }
+        }
+
+        private val SUPPORTED_BIOS =
+            listOf(
+                Bios(
+                    "scph101.bin",
+                    "6E3735FF4C7DC899EE98981385F6F3D0",
+                    "PS One 4.5 NTSC-U/C",
+                    SystemID.PSX,
+                    "171BDCEC",
+                ),
+                Bios(
+                    "scph7001.bin",
+                    "1E68C231D0896B7EADCAD1D7D8E76129",
+                    "PS Original 4.1 NTSC-U/C",
+                    SystemID.PSX,
+                    "502224B6",
+                ),
+                Bios(
+                    "scph5501.bin",
+                    "490F666E1AFB15B7362B406ED1CEA246",
+                    "PS Original 3.0 NTSC-U/C",
+                    SystemID.PSX,
+                    "8D8CB7E4",
+                ),
+                Bios(
+                    "scph1001.bin",
+                    "924E392ED05558FFDB115408C263DCCF",
+                    "PS Original 2.2 NTSC-U/C",
+                    SystemID.PSX,
+                    "37157331",
+                ),
+                Bios(
+                    "lynxboot.img",
+                    "FCD403DB69F54290B51035D82F835E7B",
+                    "Lynx Boot Image",
+                    SystemID.LYNX,
+                    "0D973C9D",
+                ),
+                Bios(
+                    "bios_CD_E.bin",
+                    "E66FA1DC5820D254611FDCDBA0662372",
+                    "Sega CD E",
+                    SystemID.SEGACD,
+                    "529AC15A",
+                ),
+                Bios(
+                    "bios_CD_J.bin",
+                    "278A9397D192149E84E820AC621A8EDD",
+                    "Sega CD J",
+                    SystemID.SEGACD,
+                    "9D2DA8F2",
+                ),
+                Bios(
+                    "bios_CD_U.bin",
+                    "2EFD74E3232FF260E371B99F84024F7F",
+                    "Sega CD U",
+                    SystemID.SEGACD,
+                    "C6D10268",
+                ),
+                Bios(
+                    "bios7.bin",
+                    "DF692A80A5B1BC90728BC3DFC76CD948",
+                    "Nintendo DS ARM7",
+                    SystemID.NDS,
+                    "1280F0D5",
+                ),
+                Bios(
+                    "bios9.bin",
+                    "A392174EB3E572FED6447E956BDE4B25",
+                    "Nintendo DS ARM9",
+                    SystemID.NDS,
+                    "2AB23573",
+                ),
+                Bios(
+                    "firmware.bin",
+                    "E45033D9B0FA6B0DE071292BBA7C9D13",
+                    "Nintendo DS Firmware",
+                    SystemID.NDS,
+                    "945F9DC9",
+                    "nds_firmware.bin",
+                ),
+                Bios(
+                    "scph39001.bin",
+                    "D5CE2C7D119F563CE04BC04571DE9B9F",
+                    "PlayStation 2 (SCPH-39001)",
+                    SystemID.PS2,
+                    "0220C2F9",
+                ),
+                Bios(
+                    "scph39004.bin",
+                    "C9A0F7E04C74E2FA1E094F94FFCFBFD8",
+                    "PlayStation 2 Europe (SCPH-39004)",
+                    SystemID.PS2,
+                    "98D4D6B6",
+                ),
+                Bios(
+                    "scph39000.bin",
+                    "D6846CF87CA7C7F30A3C910FD5F1D328",
+                    "PlayStation 2 Japan (SCPH-39000)",
+                    SystemID.PS2,
+                    "46FB0EA2",
+                ),
+                Bios(
+                    "scph70012.bin",
+                    "D333558CC14561C1FDC334C0C34137A5",
+                    "PlayStation 2 Slim (SCPH-70012)",
+                    SystemID.PS2,
+                    "1B6E631A",
+                ),
+                Bios(
+                    "scph77001.bin",
+                    "BF7E4EAF60459DB6182B11C865E9AECE",
+                    "PlayStation 2 Slim (SCPH-77001)",
+                    SystemID.PS2,
+                    "0B27DB79",
+                ),
+                Bios(
+                    "dc/dc_boot.bin",
+                    "E10C53C2F8B90BAB96EAD2D368858623",
+                    "Dreamcast BIOS",
+                    SystemID.DREAMCAST,
+                    null,
+                    "dc_boot.bin",
+                ),
+            )
+    }
+}

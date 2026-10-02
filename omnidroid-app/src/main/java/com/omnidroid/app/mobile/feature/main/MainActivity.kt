@@ -1,0 +1,1038 @@
+package com.omnidroid.app.mobile.feature.main
+
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Color
+import android.os.Bundle
+import android.view.KeyEvent
+import android.view.MotionEvent
+import androidx.activity.SystemBarStyle
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.unit.dp
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.fredporciuncula.flow.preferences.FlowSharedPreferences
+import com.omnidroid.R
+import com.omnidroid.app.OmnidroidApplication
+import com.omnidroid.app.mobile.feature.addconsole.AddConsoleScreen
+import com.omnidroid.app.mobile.feature.addconsole.AddConsoleViewModel
+import com.omnidroid.app.mobile.feature.cast.CastPickerSheet
+import com.omnidroid.app.mobile.feature.gamedetails.GameDetailsScreen
+import com.omnidroid.app.mobile.feature.gamedetails.GameDetailsViewModel
+import com.omnidroid.app.mobile.feature.library.LibraryFilter
+import com.omnidroid.app.mobile.feature.library.LibraryScreen
+import com.omnidroid.app.mobile.feature.library.LibraryTopBar
+import com.omnidroid.app.mobile.feature.library.LibraryTopBarPortraitHeight
+import com.omnidroid.app.mobile.feature.library.LibraryTopBarRowHeight
+import com.omnidroid.app.mobile.feature.library.LibraryViewModel
+import com.omnidroid.app.mobile.feature.library.LibraryStartupStore
+import com.omnidroid.app.mobile.feature.library.RegisteredSystemsStore
+import com.omnidroid.app.mobile.feature.profile.ProfileScreen
+import com.omnidroid.app.mobile.feature.profile.ProfileViewModel
+import com.omnidroid.app.mobile.feature.settings.advanced.AdvancedSettingsScreen
+import com.omnidroid.app.mobile.feature.settings.advanced.AdvancedSettingsViewModel
+import com.omnidroid.app.mobile.feature.settings.bios.BiosScreen
+import com.omnidroid.app.mobile.feature.settings.bios.BiosSettingsViewModel
+import com.omnidroid.app.mobile.feature.settings.coreselection.CoresSelectionScreen
+import com.omnidroid.app.mobile.feature.settings.coreselection.CoresSelectionViewModel
+import com.omnidroid.app.mobile.feature.settings.graphicsapi.GraphicsApiSelectionScreen
+import com.omnidroid.app.mobile.feature.settings.graphicsapi.GraphicsApiSelectionViewModel
+import com.omnidroid.app.mobile.feature.settings.deviceprofile.DeviceProfileScreen
+import com.omnidroid.app.mobile.feature.settings.deviceprofile.DeviceProfileViewModel
+import com.omnidroid.app.mobile.feature.settings.deviceprofile.ExtendedBenchmarkProgressDialog
+import com.omnidroid.app.mobile.feature.settings.deviceprofile.WelcomeBenchmarkDialog
+import com.omnidroid.app.mobile.feature.settings.general.SettingsScreen
+import com.omnidroid.app.mobile.feature.settings.general.SettingsViewModel
+import com.omnidroid.app.mobile.feature.settings.inputdevices.InputDevicesSettingsScreen
+import com.omnidroid.app.mobile.feature.settings.inputdevices.InputDevicesSettingsViewModel
+import com.omnidroid.app.mobile.feature.settings.savesync.SaveSyncSettingsScreen
+import com.omnidroid.app.mobile.feature.settings.savesync.SaveSyncSettingsViewModel
+import com.omnidroid.app.mobile.feature.settings.slices.GameDatabasesScreen
+import com.omnidroid.app.mobile.feature.settings.slices.GameDatabasesViewModel
+import com.omnidroid.app.mobile.feature.settings.unrecognized.UnrecognizedFilesScreen
+import com.omnidroid.app.mobile.feature.settings.unrecognized.UnrecognizedFilesViewModel
+import com.omnidroid.app.mobile.feature.shortcuts.ShortcutsGenerator
+import com.omnidroid.app.mobile.shared.compose.ui.AppTheme
+import com.omnidroid.app.mobile.shared.compose.ui.HomeChromeBackground
+import com.omnidroid.app.mobile.shared.controller.ControllerHintBar
+import com.omnidroid.app.mobile.shared.controller.ControllerHints
+import com.omnidroid.app.mobile.shared.controller.ControllerInputBridge
+import com.omnidroid.app.mobile.shared.controller.ControllerNavigationState
+import com.omnidroid.app.mobile.shared.controller.LocalControllerNavigation
+import com.omnidroid.app.shared.input.omnidroiddevice.OmnidroidInputDeviceGamePad
+import com.omnidroid.app.shared.input.omnidroiddevice.getOmnidroidInputDevice
+import com.omnidroid.app.shared.GameInteractor
+import com.omnidroid.app.shared.cast.CastDisplayManager
+import com.omnidroid.app.shared.cast.StopCastResult
+import com.omnidroid.app.shared.deviceprofile.DeviceProfileManager
+import com.omnidroid.app.shared.game.BaseGameActivity
+import com.omnidroid.app.shared.game.GameLauncher
+import com.omnidroid.app.shared.game.GamePlatformSession
+import com.omnidroid.app.shared.input.InputDeviceManager
+import com.omnidroid.app.shared.main.BusyActivity
+import com.omnidroid.app.shared.main.GameLaunchTaskHandler
+import com.omnidroid.app.shared.settings.SettingsInteractor
+import com.omnidroid.app.tv.channel.ChannelUpdateWork
+import com.omnidroid.app.tv.shared.TVHelper
+import com.omnidroid.common.coroutines.safeLaunch
+import com.omnidroid.ext.feature.review.ReviewManager
+import com.omnidroid.lib.android.RetrogradeComponentActivity
+import com.omnidroid.lib.bios.BiosManager
+import com.omnidroid.lib.core.CoreUpdater
+import com.omnidroid.lib.core.CoresSelection
+import com.omnidroid.lib.core.MetadataSliceInstaller
+import com.omnidroid.lib.library.MetaSystemID
+import com.omnidroid.lib.library.SystemID
+import com.omnidroid.lib.library.db.RetrogradeDatabase
+import com.omnidroid.lib.library.db.entity.Game
+import com.omnidroid.lib.preferences.SharedPreferencesHelper
+import com.omnidroid.lib.savesync.SaveSyncManager
+import com.omnidroid.lib.storage.DirectoriesManager
+import dagger.hilt.android.AndroidEntryPoint
+import de.charlex.compose.material3.HtmlText
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@AndroidEntryPoint
+class MainActivity : RetrogradeComponentActivity(), BusyActivity {
+    @Inject
+    lateinit var gameLaunchTaskHandler: GameLaunchTaskHandler
+
+    @Inject
+    lateinit var saveSyncManager: SaveSyncManager
+
+    @Inject
+    lateinit var retrogradeDb: RetrogradeDatabase
+
+    @Inject
+    lateinit var libretroDb: com.omnidroid.metadata.libretrodb.db.LibretroDBManager
+
+    @Inject
+    lateinit var sliceInstaller: MetadataSliceInstaller
+
+    @Inject
+    lateinit var settingsManager: com.omnidroid.app.mobile.feature.settings.SettingsManager
+
+    @Inject
+    lateinit var gameInteractor: GameInteractor
+
+    @Inject
+    lateinit var biosManager: BiosManager
+
+    @Inject
+    lateinit var coresSelection: CoresSelection
+
+    @Inject
+    lateinit var settingsInteractor: SettingsInteractor
+
+    @Inject
+    lateinit var inputDeviceManager: InputDeviceManager
+
+    @Inject
+    lateinit var coreUpdater: CoreUpdater
+
+    @Inject
+    lateinit var coreVariablesManager: com.omnidroid.lib.core.CoreVariablesManager
+
+    @Inject
+    lateinit var castDisplayManager: CastDisplayManager
+
+    private val reviewManager = ReviewManager()
+    private val controllerBridge = ControllerInputBridge()
+    private var notificationPermissionCallback: ((Boolean) -> Unit)? = null
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            notificationPermissionCallback?.invoke(granted)
+            notificationPermissionCallback = null
+        }
+
+    private val mainViewModel: MainViewModel by viewModels {
+        MainViewModel.Factory(applicationContext, saveSyncManager)
+    }
+
+    private val storagePermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        requestedOrientation = LibraryViewModel.orientationFor(LibraryViewModel.readSavedPortrait(this))
+        enableEdgeToEdge(
+            SystemBarStyle.dark(Color.TRANSPARENT),
+            SystemBarStyle.dark(Color.TRANSPARENT),
+        )
+        super.onCreate(savedInstanceState)
+        hideSystemBars()
+        ensureLegacyStoragePermissionsIfNeeded()
+
+        OmnidroidApplication.scope(this).safeLaunch {
+            reviewManager.initialize(applicationContext)
+        }
+
+        setContent {
+            val navController = rememberNavController()
+            MainScreen(navController)
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
+    @Composable
+    private fun MainScreen(navController: NavHostController) {
+        AppTheme {
+            val controllerNav = remember { ControllerNavigationState() }
+            val focusManager = LocalFocusManager.current
+            val navBackStackEntry = navController.currentBackStackEntryAsState()
+            val currentDestination = navBackStackEntry.value?.destination
+            val currentRoute =
+                currentDestination?.route
+                    ?.let { MainRoute.findByRoute(it) }
+                    ?: MainRoute.HOME
+
+            val infoDialogDisplayed =
+                remember {
+                    mutableStateOf(false)
+                }
+            val showCastPicker =
+                remember {
+                    mutableStateOf(false)
+                }
+            val castState = castDisplayManager.state.collectAsState().value
+
+            val deviceProfileManager = remember { DeviceProfileManager.get(applicationContext) }
+            val showWelcomeBenchmark = remember { mutableStateOf(false) }
+            val showExtendedBenchmark = remember { mutableStateOf(false) }
+            val extendedBenchmarkProgress = remember { mutableStateOf(0f) }
+
+            LaunchedEffect(Unit) {
+                if (!deviceProfileManager.isInitialCaptureDone()) {
+                    launch(Dispatchers.Default) {
+                        deviceProfileManager.ensureInitialCapture()
+                    }
+                }
+                if (!deviceProfileManager.isBenchmarkPromptShown()) {
+                    showWelcomeBenchmark.value = true
+                }
+            }
+
+            LaunchedEffect(currentRoute) {
+                mainViewModel.changeRoute(currentRoute)
+            }
+
+            val selectedGameState =
+                remember {
+                    mutableStateOf<Game?>(null)
+                }
+            val scope = rememberCoroutineScope()
+
+            var lastClickedGame by remember { mutableStateOf<Game?>(null) }
+
+            val onGameLongClick = { game: Game ->
+                selectedGameState.value = game
+            }
+
+            val openGameDetails = { game: Game ->
+                lastClickedGame = game
+                navController.navigateToGameDetails(game.id)
+            }
+
+            val closeGameDetails = {
+                navController.popBackStack()
+            }
+
+            val onGameClick = { game: Game ->
+                openGameDetails(game)
+            }
+
+            val onGameFavoriteToggle = { game: Game, isFavorite: Boolean ->
+                gameInteractor.onFavoriteToggle(game, isFavorite)
+            }
+
+            val onHelpPressed = {
+                infoDialogDisplayed.value = true
+            }
+
+            val mainUIState =
+                mainViewModel.state
+                    .collectAsState(MainViewModel.UiState())
+                    .value
+
+            val registeredSystemsStore =
+                remember {
+                    RegisteredSystemsStore(applicationContext)
+                }
+            val startupStore =
+                remember {
+                    LibraryStartupStore(applicationContext)
+                }
+            val libraryViewModel =
+                viewModel<LibraryViewModel>(
+                    factory =
+                        LibraryViewModel.Factory(
+                            applicationContext,
+                            retrogradeDb,
+                            registeredSystemsStore,
+                            startupStore,
+                        ),
+                )
+            val libraryState = libraryViewModel.state.collectAsState().value
+            LaunchedEffect(libraryState.portrait) {
+                val orientation = LibraryViewModel.orientationFor(libraryState.portrait)
+                if (requestedOrientation != orientation) {
+                    requestedOrientation = orientation
+                }
+            }
+            val gamepadConnected =
+                inputDeviceManager.getGamePadsObservable()
+                    .collectAsState(emptyList())
+                    .value
+                    .any { it.getOmnidroidInputDevice() is OmnidroidInputDeviceGamePad }
+
+            val libraryHints =
+                ControllerHints.library(
+                    switchConsoles = stringResource(R.string.controller_hint_switch_consoles),
+                    zoom = stringResource(R.string.controller_hint_zoom),
+                    select = stringResource(R.string.controller_hint_select),
+                    back = stringResource(R.string.controller_hint_back),
+                    options = stringResource(R.string.controller_hint_options),
+                    search = stringResource(R.string.controller_hint_search),
+                )
+            val standardHints =
+                ControllerHints.standard(
+                    select = stringResource(R.string.controller_hint_select),
+                    back = stringResource(R.string.controller_hint_back),
+                    options = stringResource(R.string.controller_hint_options),
+                )
+            val simpleHints =
+                ControllerHints.standard(
+                    select = stringResource(R.string.controller_hint_select),
+                    back = stringResource(R.string.controller_hint_back),
+                )
+            val addConsoleHints =
+                ControllerHints.carousel(
+                    switchConsoles = stringResource(R.string.controller_hint_switch_consoles),
+                    select = stringResource(R.string.controller_hint_install),
+                    back = stringResource(R.string.controller_hint_back),
+                )
+            val settingsHints =
+                ControllerHints.carousel(
+                    switchConsoles = stringResource(R.string.controller_hint_switch_categories),
+                    select = stringResource(R.string.controller_hint_select),
+                    back = stringResource(R.string.controller_hint_back),
+                )
+
+            LaunchedEffect(currentRoute, selectedGameState.value) {
+                controllerNav.setHints(
+                    when {
+                        selectedGameState.value != null -> simpleHints
+                        currentRoute == MainRoute.HOME -> libraryHints
+                        currentRoute == MainRoute.GAME_DETAILS -> standardHints
+                        currentRoute == MainRoute.ADD_CONSOLES -> addConsoleHints
+                        currentRoute == MainRoute.SETTINGS -> settingsHints
+                        else -> simpleHints
+                    },
+                )
+            }
+
+            controllerNav.onBack = {
+                if (controllerNav.textInputActive || controllerNav.searchArmed.value) {
+                    controllerNav.dismissSearch()
+                } else if (selectedGameState.value != null) {
+                    selectedGameState.value = null
+                } else if (currentRoute == MainRoute.GAME_DETAILS) {
+                    closeGameDetails()
+                } else {
+                    handleLauncherBack(
+                        navController = navController,
+                        currentRoute = currentRoute,
+                        libraryState = libraryState,
+                        infoDialogDisplayed = infoDialogDisplayed,
+                        selectedGameState = selectedGameState,
+                        showCastPicker = showCastPicker,
+                        libraryViewModel = libraryViewModel,
+                    )
+                }
+            }
+            controllerNav.onOptions = {
+                val focusedGame = controllerNav.focusedGame.value
+                when {
+                    selectedGameState.value != null -> selectedGameState.value = null
+                    focusedGame != null -> selectedGameState.value = focusedGame
+                    currentRoute != MainRoute.SETTINGS -> navController.navigateToRoute(MainRoute.SETTINGS)
+                }
+            }
+            controllerNav.onSearch = {
+                when (currentRoute) {
+                    MainRoute.HOME -> { }
+                    MainRoute.GAME_DETAILS -> closeGameDetails()
+                    else -> navigateToLibraryHome(navController)
+                }
+                controllerNav.searchArmed.value = true
+            }
+            controllerNav.onScan = {
+                if (currentRoute == MainRoute.HOME && !libraryState.operationInProgress) {
+                    libraryViewModel.syncLibrary(this@MainActivity)
+                }
+            }
+            controllerNav.onZoomIn = {
+                if (currentRoute == MainRoute.HOME) {
+                    libraryViewModel.zoomIn()
+                }
+            }
+            controllerNav.onZoomOut = {
+                if (currentRoute == MainRoute.HOME) {
+                    libraryViewModel.zoomOut()
+                }
+            }
+            controllerNav.onPrevConsole = {
+                when (currentRoute) {
+                    MainRoute.HOME -> libraryViewModel.cycleFilter(-1)
+                    MainRoute.ADD_CONSOLES -> controllerNav.onCarouselPrev()
+                    MainRoute.SETTINGS -> controllerNav.onCycleSettings?.invoke(-1)
+                    else -> { }
+                }
+            }
+            controllerNav.onNextConsole = {
+                when (currentRoute) {
+                    MainRoute.HOME -> libraryViewModel.cycleFilter(1)
+                    MainRoute.ADD_CONSOLES -> controllerNav.onCarouselNext()
+                    MainRoute.SETTINGS -> controllerNav.onCycleSettings?.invoke(1)
+                    else -> { }
+                }
+            }
+            SideEffect {
+                controllerBridge.navigation = controllerNav
+            }
+
+            BackHandler {
+                if (selectedGameState.value != null) {
+                    selectedGameState.value = null
+                } else if (currentRoute == MainRoute.GAME_DETAILS) {
+                    closeGameDetails()
+                } else {
+                    handleLauncherBack(
+                        navController = navController,
+                        currentRoute = currentRoute,
+                        libraryState = libraryState,
+                        infoDialogDisplayed = infoDialogDisplayed,
+                        selectedGameState = selectedGameState,
+                        showCastPicker = showCastPicker,
+                        libraryViewModel = libraryViewModel,
+                    )
+                }
+            }
+
+            CompositionLocalProvider(LocalControllerNavigation provides controllerNav) {
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val portraitHome = libraryState.portrait && currentRoute == MainRoute.HOME
+            val portraitColumnWidth = maxWidth
+            val libraryTopPadding =
+                if (portraitHome) LibraryTopBarPortraitHeight else LibraryTopBarRowHeight
+            Scaffold(
+                containerColor = HomeChromeBackground,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                bottomBar = {
+                    if (gamepadConnected) {
+                        ControllerHintBar(
+                            visible = true,
+                            hints = controllerNav.hints.value,
+                        )
+                    }
+                },
+            ) { padding ->
+                SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {
+                    NavHost(
+                        modifier = Modifier.fillMaxSize(),
+                        navController = navController,
+                        startDestination = MainRoute.HOME.route,
+                    ) {
+                        composable(
+                            MainRoute.HOME,
+                            enterTransition = { fadeIn(animationSpec = tween(400, easing = FastOutSlowInEasing)) },
+                            exitTransition = { fadeOut(animationSpec = tween(400, easing = FastOutSlowInEasing)) },
+                            popEnterTransition = { fadeIn(animationSpec = tween(400, easing = FastOutSlowInEasing)) },
+                            popExitTransition = { fadeOut(animationSpec = tween(400, easing = FastOutSlowInEasing)) },
+                        ) {
+                            LibraryScreen(
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .padding(padding)
+                                        .padding(top = libraryTopPadding),
+                                sharedTransitionScope = this@SharedTransitionLayout,
+                                animatedVisibilityScope = this,
+                                viewModel = libraryViewModel,
+                                onGameClick = onGameClick,
+                                onContinueClick = {
+                                    libraryViewModel.clearSearchQuery()
+                                    gameInteractor.onGamePlay(it)
+                                },
+                                onGameLongClick = onGameLongClick,
+                                onAddConsole = { navController.navigateToRoute(MainRoute.ADD_CONSOLES) },
+                                controllerConnected = gamepadConnected,
+                                portraitColumnWidth = portraitColumnWidth,
+                            )
+                        }
+                        composable(
+                            MainRoute.GAME_DETAILS,
+                            enterTransition = { fadeIn(animationSpec = tween(400, easing = FastOutSlowInEasing)) },
+                            exitTransition = { fadeOut(animationSpec = tween(400, easing = FastOutSlowInEasing)) },
+                            popEnterTransition = { fadeIn(animationSpec = tween(400, easing = FastOutSlowInEasing)) },
+                            popExitTransition = { fadeOut(animationSpec = tween(400, easing = FastOutSlowInEasing)) },
+                        ) { entry ->
+                            val gameId = entry.arguments?.getInt("gameId") ?: return@composable
+                            val initialGame = lastClickedGame?.takeIf { it.id == gameId }
+                            GameDetailsScreen(
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .padding(padding)
+                                        .padding(top = LibraryTopBarRowHeight),
+                                sharedTransitionScope = this@SharedTransitionLayout,
+                                animatedVisibilityScope = this,
+                                viewModel =
+                                    viewModel(
+                                        factory =
+                                            GameDetailsViewModel.Factory(
+                                                applicationContext,
+                                                retrogradeDb,
+                                                settingsManager,
+                                                gameId,
+                                                initialGame = initialGame,
+                                            ),
+                                    ),
+                                onBack = {
+                                    navController.popBackStack()
+                                },
+                                onPlay = {
+                                    libraryViewModel.clearSearchQuery()
+                                    gameInteractor.onGamePlay(it)
+                                },
+                                onFavoriteToggle = onGameFavoriteToggle,
+                                onOpenSettings = { selectedGameState.value = it },
+                                onSetCustomName = { game, name -> gameInteractor.onSetCustomName(game, name) },
+                                onSetCustomThumbnail = { game, uri -> gameInteractor.onSetCustomCover(game, uri) },
+                            )
+                        }
+                    composable(MainRoute.ADD_CONSOLES) {
+                        AddConsoleScreen(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(padding)
+                                    .padding(top = LibraryTopBarRowHeight),
+                            viewModel =
+                                viewModel(
+                                    factory =
+                                        AddConsoleViewModel.Factory(
+                                            applicationContext,
+                                            retrogradeDb,
+                                            registeredSystemsStore,
+                                            coreUpdater,
+                                            coresSelection,
+                                        ),
+                                ),
+                        )
+                    }
+                    composable(MainRoute.SETTINGS) {
+                        SettingsScreen(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(padding)
+                                    .padding(top = LibraryTopBarRowHeight),
+                            viewModel =
+                                viewModel(
+                                    factory =
+                                        SettingsViewModel.Factory(
+                                            applicationContext,
+                                            settingsInteractor,
+                                            saveSyncManager,
+                                            FlowSharedPreferences(
+                                                SharedPreferencesHelper.getLegacySharedPreferences(
+                                                    applicationContext,
+                                                ),
+                                            ),
+                                        ),
+                                ),
+                            navController = navController,
+                            availableConsoles = libraryState.sidebarSystems,
+                        )
+                    }
+                    composable(MainRoute.SETTINGS_ADVANCED) {
+                        AdvancedSettingsScreen(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(padding)
+                                    .padding(top = LibraryTopBarRowHeight),
+                            viewModel =
+                                viewModel(
+                                    factory =
+                                        AdvancedSettingsViewModel.Factory(
+                                            applicationContext,
+                                            settingsInteractor,
+                                        ),
+                                ),
+                            navController = navController,
+                        )
+                    }
+                    composable(MainRoute.SETTINGS_GAME_DATABASES) {
+                        GameDatabasesScreen(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(padding)
+                                    .padding(top = LibraryTopBarRowHeight),
+                            viewModel =
+                                viewModel(
+                                    factory =
+                                        GameDatabasesViewModel.Factory(
+                                            applicationContext,
+                                            libretroDb,
+                                            sliceInstaller,
+                                        ),
+                                ),
+                        )
+                    }
+                    composable(MainRoute.SETTINGS_UNRECOGNIZED) {
+                        UnrecognizedFilesScreen(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(padding)
+                                    .padding(top = LibraryTopBarRowHeight),
+                            viewModel =
+                                viewModel(
+                                    factory =
+                                        UnrecognizedFilesViewModel.Factory(
+                                            retrogradeDb,
+                                        ),
+                                ),
+                        )
+                    }
+                    composable(MainRoute.SETTINGS_BIOS) {
+                        BiosScreen(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(padding)
+                                    .padding(top = LibraryTopBarRowHeight),
+                            viewModel =
+                                viewModel(
+                                    factory = BiosSettingsViewModel.Factory(biosManager),
+                                ),
+                        )
+                    }
+                    composable(MainRoute.SETTINGS_CORES_SELECTION) {
+                        CoresSelectionScreen(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(padding)
+                                    .padding(top = LibraryTopBarRowHeight),
+                            viewModel =
+                                viewModel(
+                                    factory =
+                                        CoresSelectionViewModel.Factory(
+                                            applicationContext,
+                                            coresSelection,
+                                        ),
+                                ),
+                        )
+                    }
+                    composable(MainRoute.SETTINGS_GRAPHICS_API) {
+                        GraphicsApiSelectionScreen(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(padding)
+                                    .padding(top = LibraryTopBarRowHeight),
+                            viewModel =
+                                viewModel(
+                                    factory =
+                                        GraphicsApiSelectionViewModel.Factory(
+                                            applicationContext,
+                                            coreVariablesManager,
+                                        ),
+                                ),
+                        )
+                    }
+                    composable(MainRoute.SETTINGS_INPUT_DEVICES) {
+                        InputDevicesSettingsScreen(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(padding)
+                                    .padding(top = LibraryTopBarRowHeight),
+                            viewModel =
+                                viewModel(
+                                    factory =
+                                        InputDevicesSettingsViewModel.Factory(
+                                            applicationContext,
+                                            inputDeviceManager,
+                                        ),
+                                ),
+                        )
+                    }
+                    composable(MainRoute.SETTINGS_SAVE_SYNC) {
+                        SaveSyncSettingsScreen(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(padding)
+                                    .padding(top = LibraryTopBarRowHeight),
+                            viewModel =
+                                viewModel(
+                                    factory =
+                                        SaveSyncSettingsViewModel.Factory(
+                                            application,
+                                            saveSyncManager,
+                                        ),
+                                ),
+                        )
+                    }
+                    composable(MainRoute.SETTINGS_DEVICE_PROFILE) {
+                        DeviceProfileScreen(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(padding)
+                                    .padding(top = LibraryTopBarRowHeight),
+                            viewModel =
+                                viewModel(
+                                    factory = DeviceProfileViewModel.Factory(applicationContext),
+                                ),
+                        )
+                    }
+                    composable(MainRoute.PROFILE) {
+                        ProfileScreen(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(padding)
+                                    .padding(top = LibraryTopBarRowHeight),
+                            viewModel =
+                                viewModel(
+                                    factory =
+                                        ProfileViewModel.Factory(
+                                            applicationContext,
+                                            retrogradeDb,
+                                            registeredSystemsStore,
+                                        ),
+                                ),
+                        )
+                    }
+                }
+                }
+            }
+
+            MainGameContextActions(
+                selectedGameState = selectedGameState,
+                retrogradeDb = retrogradeDb,
+                shortcutSupported = gameInteractor.supportShortcuts(),
+                saveSyncSupported = gameInteractor.isSaveSyncSupported(),
+                cloudOverride = selectedGameState.value?.let { gameInteractor.getCloudOverride(it) },
+                frameSpeed = selectedGameState.value?.let { gameInteractor.getFrameSpeed(it) } ?: 1,
+                onGamePlay = {
+                    libraryViewModel.clearSearchQuery()
+                    gameInteractor.onGamePlay(it)
+                },
+                onGameRestart = {
+                    libraryViewModel.clearSearchQuery()
+                    gameInteractor.onGameRestart(it)
+                },
+                onFavoriteToggle = { game: Game, isFavorite: Boolean ->
+                    gameInteractor.onFavoriteToggle(game, isFavorite)
+                },
+                onCreateShortcut = { gameInteractor.onCreateShortcut(it) },
+                onCloudOverride = { game, override -> gameInteractor.setCloudOverride(game, override) },
+                onFrameSpeed = { game, speed -> gameInteractor.setFrameSpeed(game, speed) },
+                onSyncGameNow = { gameInteractor.syncGameNow(it) },
+                onSetCustomThumbnail = { game, uri -> gameInteractor.onSetCustomCover(game, uri) },
+                onRemoveCustomThumbnail = { gameInteractor.onRemoveCustomCover(it) },
+                onSetCustomName = { game, name -> gameInteractor.onSetCustomName(game, name) },
+                onRemoveCustomName = { gameInteractor.onRemoveCustomName(it) },
+            )
+
+            if (showCastPicker.value) {
+                CastPickerSheet(
+                    state = castState,
+                    onSelectDisplay = { displayId ->
+                        castDisplayManager.selectDisplay(displayId)
+                        showCastPicker.value = false
+                        castDisplayManager.showIdle(this@MainActivity)
+                    },
+                    onStopCasting = {
+                        val result = castDisplayManager.stopCasting()
+                        showCastPicker.value = false
+                        if (result is StopCastResult.NeedsSystemDisconnect) {
+                            castDisplayManager.openSystemCastSettings(this@MainActivity)
+                        }
+                    },
+                    onFindDisplay = { castDisplayManager.openSystemCastSettings(this@MainActivity) },
+                    onDismiss = { showCastPicker.value = false },
+                )
+            }
+
+            if (infoDialogDisplayed.value) {
+                val message =
+                    remember {
+                        val systemFolders =
+                            SystemID.values()
+                                .joinToString(", ") { "<i>${it.dbname}</i>" }
+
+                        getString(R.string.omnidroid_help_content)
+                            .replace("\$SYSTEMS", systemFolders)
+                    }
+
+                AlertDialog(
+                    text = { HtmlText(text = message) },
+                    onDismissRequest = { infoDialogDisplayed.value = false },
+                    confirmButton = { },
+                )
+            }
+
+            if (showWelcomeBenchmark.value) {
+                WelcomeBenchmarkDialog(
+                    onAgree = {
+                        showWelcomeBenchmark.value = false
+                        deviceProfileManager.markBenchmarkPromptShown()
+                        showExtendedBenchmark.value = true
+                        extendedBenchmarkProgress.value = 0f
+                        scope.launch {
+                            deviceProfileManager.runExtendedBenchmark { progress ->
+                                extendedBenchmarkProgress.value = progress
+                            }
+                            showExtendedBenchmark.value = false
+                        }
+                    },
+                    onDecline = {
+                        showWelcomeBenchmark.value = false
+                        deviceProfileManager.markBenchmarkPromptShown()
+                    },
+                )
+            }
+
+            if (showExtendedBenchmark.value) {
+                ExtendedBenchmarkProgressDialog(progress = extendedBenchmarkProgress.value)
+            }
+
+            val compactProgress by animateFloatAsState(
+                targetValue = if (currentRoute == MainRoute.GAME_DETAILS) 1f else 0f,
+                animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+                label = "topBarCompactProgress",
+            )
+            LibraryTopBar(
+                modifier = Modifier.align(Alignment.TopStart).fillMaxWidth(),
+                operationInProgress =
+                    libraryState.operationInProgress || mainUIState.operationInProgress,
+                gamepadConnected = gamepadConnected,
+                onScanPressed = { libraryViewModel.syncLibrary(this@MainActivity) },
+                onCastPressed = {
+                    castDisplayManager.refresh()
+                    showCastPicker.value = true
+                },
+                onSettingsPressed = { navController.navigateToRoute(MainRoute.SETTINGS) },
+                onProfilePressed = { navController.navigateToRoute(MainRoute.PROFILE) },
+                overlayTitleId =
+                    currentRoute.takeIf {
+                        it != MainRoute.HOME && it != MainRoute.GAME_DETAILS
+                    }?.titleId,
+                onBackPressed = {
+                    navController.popBackStack()
+                },
+                compactProgress = compactProgress,
+                searchQuery = libraryState.searchQuery,
+                onSearchQueryChange = { libraryViewModel.changeQueryString(it) },
+                onClearSearch = { libraryViewModel.clearSearchQuery() },
+                casting = castState.isCasting,
+                consoleTitleId =
+                    (libraryState.filter as? LibraryFilter.System)?.metaSystemID?.titleResId,
+                consoleGameCount = libraryState.selectedSystemGameCount,
+                portrait = libraryState.portrait,
+                portraitColumnWidth = portraitColumnWidth,
+                detailsMode = currentRoute == MainRoute.GAME_DETAILS,
+            )
+            }
+            }
+        }
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        return controllerBridge.dispatchKey(event) { super.dispatchKeyEvent(it) }
+    }
+
+    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+        if (controllerBridge.dispatchMotion(event) { super.dispatchKeyEvent(it) }) {
+            return true
+        }
+        return super.dispatchGenericMotionEvent(event)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        requestedOrientation = LibraryViewModel.orientationFor(LibraryViewModel.readSavedPortrait(this))
+        hideSystemBars()
+        castDisplayManager.refresh()
+        castDisplayManager.attachHost(this)
+        GamePlatformSession.reportLibrary(this)
+    }
+
+    override fun onDestroy() {
+        castDisplayManager.hideIdle()
+        super.onDestroy()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            hideSystemBars()
+        }
+    }
+
+    private fun hideSystemBars() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+    }
+
+    private fun navigateToLibraryHome(navController: NavHostController) {
+        val returnedHome = navController.popBackStack(MainRoute.HOME.route, inclusive = false)
+        if (!returnedHome) {
+            navController.navigate(MainRoute.HOME.route) {
+                launchSingleTop = true
+            }
+        }
+    }
+
+    private fun handleLauncherBack(
+        navController: NavHostController,
+        currentRoute: MainRoute,
+        libraryState: LibraryViewModel.UiState,
+        infoDialogDisplayed: MutableState<Boolean>,
+        selectedGameState: MutableState<Game?>,
+        showCastPicker: MutableState<Boolean>,
+        libraryViewModel: LibraryViewModel,
+    ) {
+        when {
+            showCastPicker.value -> {
+                showCastPicker.value = false
+            }
+            infoDialogDisplayed.value -> {
+                infoDialogDisplayed.value = false
+            }
+            selectedGameState.value != null -> {
+                selectedGameState.value = null
+            }
+            currentRoute != MainRoute.HOME -> {
+                navigateToLibraryHome(navController)
+            }
+            libraryState.searchQuery.isNotEmpty() -> {
+                libraryViewModel.clearSearchQuery()
+            }
+            libraryState.filter !is LibraryFilter.All -> {
+                libraryViewModel.selectFilter(LibraryFilter.All)
+            }
+        }
+    }
+
+    fun requestNotificationPermission(onResult: (Boolean) -> Unit) {
+        notificationPermissionCallback = onResult
+        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    private fun ensureLegacyStoragePermissionsIfNeeded() {
+        if (TVHelper.isSAFSupported(this) || hasLegacyStoragePermission()) {
+            return
+        }
+        storagePermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+    }
+
+    private fun hasLegacyStoragePermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    override fun activity(): Activity = this
+
+    override fun isBusy(): Boolean = mainViewModel.state.value.operationInProgress ?: false
+
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?,
+    ) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        when (requestCode) {
+            BaseGameActivity.REQUEST_PLAY_GAME -> {
+                castDisplayManager.restoreIdle(this)
+                lifecycleScope.safeLaunch {
+                    gameLaunchTaskHandler.handleGameFinish(
+                        true,
+                        this@MainActivity,
+                        resultCode,
+                        data,
+                    )
+                    if (TVHelper.isTV(applicationContext)) {
+                        ChannelUpdateWork.enqueue(applicationContext)
+                    }
+                }
+            }
+        }
+    }
+}

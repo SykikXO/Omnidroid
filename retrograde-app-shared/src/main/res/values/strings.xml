@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="local_storage">Local Storage</string>
+
+    <string name="controller_arcade_4">Default (4 buttons)</string>
+    <string name="controller_arcade_6">Default (6 buttons)</string>
+
+    <string name="controller_genesis_3">Default (3 buttons)</string>
+    <string name="controller_genesis_6">Default (6 buttons)</string>
+
+    <string name="controller_default">Default</string>
+    <string name="controller_dualshock">DualShock</string>
+    <string name="controller_dualshock2">DualShock 2</string>
+    <string name="controller_gamecube">GameCube Controller</string>
+    <string name="controller_wii_classic">Wii Classic Controller</string>
+    <string name="controller_wii_remote">Wii Remote + Nunchuk</string>
+    <string name="controller_wii_sideways">Wii Remote (Sideways)</string>
+    <string name="controller_wii_u_gamepad">Wii U GamePad</string>
+    <string name="controller_wii_u_pro">Wii U Pro Controller</string>
+    <string name="controller_standard">Standard</string>
+    <string name="controller_landscape">Landscape</string>
+    <string name="controller_portrait">Portrait</string>
+
+    <string name="controller_dos_auto">Auto</string>
+    <string name="controller_dos_mouse_left">Mouse with Left Stick</string>
+    <string name="controller_dos_mouse_right">Mouse with Right Stick</string>
+
+    <!-- Core settings titles -->
+    <string name="setting_stella_filter">TV effect</string>
+    <string name="setting_stella_crop_hoverscan">Crop horizontal overscan</string>
+    <string name="setting_fceumm_overscan_h">Crop horizontal overscan</string>
+    <string name="setting_fceumm_overscan_v">Crop vertical overscan</string>
+    <string name="setting_fceumm_nospritelimit">No sprite limit</string>
+    <string name="setting_genesis_plus_gx_blargg_ntsc_filter">TV effect</string>
+    <string name="setting_genesis_plus_gx_overscan">Borders</string>
+    <string name="setting_genesis_plus_gx_lcd_filter">LCD ghosting</string>
+    <string name="setting_genesis_plus_gx_no_sprite_limit">No sprite limit</string>
+    <string name="setting_gambatte_gb_colorization">Colorization</string>
+    <string name="setting_gambatte_gb_internal_palette">Internal palette</string>
+    <string name="setting_gambatte_mix_frames">LCD ghosting</string>
+    <string name="setting_gambatte_dark_filter_level">Darken screen</string>
+    <string name="setting_gambatte_gbc_color_correction">Color correction</string>
+    <string name="setting_mgba_solar_sensor_level">Solar sensor level</string>
+    <string name="setting_mgba_interframe_blending">LCD ghosting</string>
+    <string name="setting_mgba_frameskip">Frameskip</string>
+    <string name="setting_mgba_color_correction">Color correction</string>
+    <string name="setting_mupen64plus_43screensize">Screen size 4:3</string>
+    <string name="setting_mupen64plus_cpucore">Dynamic recompiler</string>
+    <string name="setting_mupen64plus_BilinearMode">Bilinear mode</string>
+    <string name="setting_mupen64plus_pak1">Player 1 Pak</string>
+    <string name="setting_mupen64plus_pak2">Player 2 Pak</string>
+    <string name="setting_pcsx_rearmed_frameskip">Frameskip</string>
+    <string name="setting_pcsx_rearmed_drc">Dynamic recompiler</string>
+    <string name="setting_ppsspp_auto_frameskip">Auto frameskip</string>
+    <string name="setting_ppsspp_frameskip">Frameskip</string>
+    <string name="setting_ppsspp_cpu_core">Dynamic recompiler</string>
+    <string name="setting_ppsspp_internal_resolution">Resolution</string>
+    <string name="setting_ppsspp_texture_scaling_level">Texture scaling level</string>
+    <string name="setting_ppsspp_texture_scaling_type">Texture scaling type</string>
+    <string name="setting_ppsspp_texture_filtering">Texture filtering</string>
+    <string name="setting_fbneo_frameskip">Frameskip</string>
+    <string name="setting_fbneo_cpu_speed_adjust">CPU speed</string>
+    <string name="setting_desmume_screens_layout">Screens layout</string>
+    <string name="setting_desmume_frameskip">Frameskip</string>
+    <string name="setting_melonds_screen_layout">Screens layout</string>
+    <string name="setting_melonds_threaded_renderer">Threaded renderer</string>
+    <string name="setting_melonds_jit_enable">Dynamic recompiler</string>
+    <string name="setting_melonds_mic_input">Microphone mode</string>
+    <string name="setting_wswan_rotate_display">Orientation</string>
+    <string name="setting_wswan_mono_palette">Colorization</string>
+    <string name="setting_handy_rot">Display rotation</string>
+    <string name="setting_citra_layout_option">Screens layout</string>
+    <string name="setting_citra_swap_screen">Displayed screen</string>
+    <string name="setting_citra_resolution_factor">Resolution scaling</string>
+    <string name="setting_citra_use_acc_mul">Accurate shaders multiplication</string>
+    <string name="setting_citra_use_acc_geo_shaders">Accurate geometry shaders</string>
+    <string name="setting_graphics_api">Graphics API</string>
+    <string name="value_graphics_api_opengl">OpenGL</string>
+    <string name="value_graphics_api_vulkan">Vulkan</string>
+    <string name="value_graphics_api_software">Software</string>
+
+    <string name="setting_armsx2_upscale">Internal Resolution</string>
+    <string name="value_armsx2_res_1x">1x Native (640x448)</string>
+    <string name="value_armsx2_res_2x">2x (1280x896)</string>
+    <string name="value_armsx2_res_3x">3x (1920x1344)</string>
+    <string name="value_armsx2_res_4x">4x (2560x1792)</string>
+
+    <string name="setting_armsx2_blending_accuracy">Blending Accuracy</string>
+    <string name="value_armsx2_blending_basic">Basic</string>
+    <string name="value_armsx2_blending_minimum">Minimum (Fastest)</string>
+    <string name="value_armsx2_blending_medium">Medium</string>
+    <string name="value_armsx2_blending_high">High</string>
+    <string name="value_armsx2_blending_full">Full</string>
+    <string name="value_armsx2_blending_maximum">Maximum (Accurate)</string>
+
+    <string name="setting_armsx2_hw_download_mode">Hardware Download Mode</string>
+    <string name="value_armsx2_hw_download_disabled">Disabled (Fastest)</string>
+    <string name="value_armsx2_hw_download_unsynchronized">Unsynchronized</string>
+    <string name="value_armsx2_hw_download_disable_readbacks">Disable Readbacks</string>
+    <string name="value_armsx2_hw_download_accurate">Accurate</string>
+
+    <string name="setting_armsx2_ee_cycle_skip">EE Cycle Skip (Underclock)</string>
+    <string name="value_armsx2_ee_cycle_skip_disabled">Disabled</string>
+    <string name="value_armsx2_ee_cycle_skip_mild">Mild (Recommended)</string>
+    <string name="value_armsx2_ee_cycle_skip_moderate">Moderate</string>
+    <string name="value_armsx2_ee_cycle_skip_maximum">Maximum</string>
+
+    <string name="setting_armsx2_ee_cycle_rate">EE Cycle Rate</string>
+    <string name="value_armsx2_ee_cycle_rate_100">100% (Normal)</string>
+    <string name="value_armsx2_ee_cycle_rate_75">75% (-1 Underclock)</string>
+    <string name="value_armsx2_ee_cycle_rate_60">60% (-2 Underclock)</string>
+    <string name="value_armsx2_ee_cycle_rate_50">50% (-3 Underclock)</string>
+    <string name="value_armsx2_ee_cycle_rate_130">130% (+1 Overclock)</string>
+    <string name="value_armsx2_ee_cycle_rate_180">180% (+2 Overclock)</string>
+    <string name="value_armsx2_ee_cycle_rate_300">300% (+3 Overclock)</string>
+
+    <string name="setting_armsx2_mtvu">MTVU (Multi-Threaded VU1)</string>
+    <string name="setting_armsx2_instant_vu1">Instant VU1</string>
+
+    <string name="setting_dolphin_efb_scale">Internal Resolution</string>
+    <string name="setting_dolphin_sensor_bar_position">Sensor Bar Position</string>
+    <string name="setting_dolphin_widescreen">Widescreen (16:9)</string>
+    <string name="setting_dolphin_progressive_scan">Progressive Scan</string>
+    <string name="value_dolphin_sensor_bar_bottom">Bottom</string>
+    <string name="value_dolphin_sensor_bar_top">Top</string>
+    <string name="value_dolphin_res_1x">1x Native (640x528)</string>
+    <string name="value_dolphin_res_2x">2x (1280x1056)</string>
+    <string name="value_dolphin_res_3x">3x (1920x1584)</string>
+    <string name="value_dolphin_res_4x">4x (2560x2112)</string>
+    <string name="value_citra_res_1x">1x Native (400x240)</string>
+    <string name="value_citra_res_2x">2x (800x480)</string>
+    <string name="value_citra_res_3x">3x (1200x720)</string>
+    <string name="value_citra_res_4x">4x (1600x960)</string>
+    <string name="value_citra_res_5x">5x (2000x1200)</string>
+    <string name="value_citra_res_6x">6x (2400x1440)</string>
+
+    <!-- Core settings values. Duplicated here to ease the translation process. -->
+    <string name="value_gambatte_mix_frames_disabled">Disabled</string>
+    <string name="value_gambatte_mix_frames_mix">Simple</string>
+    <string name="value_gambatte_mix_frames_lcd_ghosting">LCD Ghosting (Accurate)</string>
+    <string name="value_gambatte_mix_frames_lcd_ghosting_fast">LCD Ghosting (Fast)</string>
+    <string name="value_gambatte_gbc_color_correction_always">Enabled</string>
+    <string name="value_gambatte_gbc_color_correction_disabled">Disabled</string>
+
+    <string name="value_mgba_interframe_blending_off">Disabled</string>
+    <string name="value_mgba_interframe_blending_mix">Simple</string>
+    <string name="value_mgba_interframe_blending_lcd_ghosting">LCD Ghosting (Accurate)</string>
+    <string name="value_mgba_interframe_blending_lcd_ghosting_fast">LCD Ghosting (Fast)</string>
+
+    <string name="value_mgba_frameskip_disabled">Disabled</string>
+    <string name="value_mgba_frameskip_auto">Auto</string>
+
+    <string name="value_mgba_color_correction_off">Disabled</string>
+    <string name="value_mgba_color_correction_gba">Enabled</string>
+
+    <string name="value_stella_filter_disabled">Disabled</string>
+    <string name="value_stella_filter_composite">Composite</string>
+    <string name="value_stella_filter_svideo">S-Video</string>
+    <string name="value_stella_filter_rgb">RGB</string>
+    <string name="value_stella_filter_badlyadjusted">Badly adjusted</string>
+
+    <string name="value_genesis_plus_gx_blargg_ntsc_filter_disabled">Disabled</string>
+    <string name="value_genesis_plus_gx_blargg_ntsc_filter_monochrome">Monochrome</string>
+    <string name="value_genesis_plus_gx_blargg_ntsc_filter_composite">Composite</string>
+    <string name="value_genesis_plus_gx_blargg_ntsc_filter_svideo">S-Video</string>
+    <string name="value_genesis_plus_gx_blargg_ntsc_filter_rgb">RGB</string>
+
+    <string name="value_genesis_plus_gx_overscan_disabled">Disabled</string>
+    <string name="value_genesis_plus_gx_overscan_topbottom">Top/Bottom</string>
+    <string name="value_genesis_plus_gx_overscan_leftright">Left/Right</string>
+    <string name="value_genesis_plus_gx_overscan_full">Full</string>
+
+    <string name="value_mupen64plus_cpucore_dynamicrecompiler">Dynamic recompiler</string>
+    <string name="value_mupen64plus_cpucore_pureinterpreter">Pure interpreter</string>
+    <string name="value_mupen64plus_cpucore_cachedinterpreter">Cached interpreter</string>
+
+    <string name="value_mupen64plus_bilinearmode_standard">Standard</string>
+    <string name="value_mupen64plus_bilinearmode_3point">3-Point</string>
+
+    <string name="value_mupen64plus_mupen64plus_pak1_memory">Memory</string>
+    <string name="value_mupen64plus_mupen64plus_pak1_rumble">Rumble</string>
+    <string name="value_mupen64plus_mupen64plus_pak1_none">None</string>
+
+    <string name="value_mupen64plus_mupen64plus_pak2_none">None</string>
+    <string name="value_mupen64plus_mupen64plus_pak2_rumble">Rumble</string>
+
+    <string name="value_melonds_screen_layout_topbottom">Top - Bottom</string>
+    <string name="value_melonds_screen_layout_leftright">Left - Right</string>
+    <string name="value_melonds_screen_layout_toponly">Top Only</string>
+    <string name="value_melonds_screen_layout_bottomonly">Bottom Only</string>
+    <string name="value_melonds_screen_layout_hybridtop">Hybrid Top</string>
+    <string name="value_melonds_screen_layout_hybridbottom">Hybrid Bottom</string>
+    <string name="value_melonds_mic_input_microphone">Real microphone</string>
+    <string name="value_melonds_mic_input_blow">Simulate blow sounds</string>
+
+    <string name="value_citra_layout_option_topbottom">Top - Bottom</string>
+    <string name="value_citra_layout_option_sidebyside">Left - Right</string>
+    <string name="value_citra_layout_option_single">Single Screen</string>
+    <string name="value_citra_swap_screen_top">Top</string>
+    <string name="value_citra_swap_screen_bottom">Bottom</string>
+
+    <string name="value_desmume_screens_layout_topbottom">Top - Bottom</string>
+    <string name="value_desmume_screens_layout_leftright">Left - Right</string>
+
+    <string name="value_ppsspp_cpu_core_jit">JIT</string>
+    <string name="value_ppsspp_cpu_core_irjit">IR JIT</string>
+    <string name="value_ppsspp_cpu_core_interpreter">Interpreter</string>
+
+    <string name="value_wswan_rotate_display_landscape">Landscape</string>
+    <string name="value_wswan_rotate_display_portrait">Portrait</string>
+
+    <string name="value_handy_rot_none">0</string>
+    <string name="value_handy_rot_90">90</string>
+    <string name="value_handy_rot_270">270</string>
+
+    <!-- Flycast settings -->
+    <string name="setting_flycast_internal_resolution">Internal Resolution</string>
+    <string name="value_flycast_res_640x480">1x Native (640x480)</string>
+    <string name="value_flycast_res_1280x960">2x (1280x960)</string>
+    <string name="value_flycast_res_1920x1440">3x (1920x1440)</string>
+    <string name="value_flycast_res_2560x1920">4x (2560x1920)</string>
+    <string name="setting_flycast_widescreen_hack">Widescreen Hack</string>
+    <string name="setting_flycast_cable_type">Cable Type</string>
+    <string name="value_flycast_cable_composite">TV (Composite)</string>
+    <string name="value_flycast_cable_rgb">TV (RGB)</string>
+    <string name="value_flycast_cable_vga">VGA (RGB)</string>
+    <string name="setting_flycast_threaded_rendering">Threaded Rendering</string>
+    <string name="setting_flycast_alpha_sorting">Alpha Sorting</string>
+    <string name="value_flycast_alpha_sorting_strip">Per-Strip (Fast)</string>
+    <string name="value_flycast_alpha_sorting_triangle">Per-Triangle (Normal)</string>
+    <string name="value_flycast_alpha_sorting_pixel">Per-Pixel (Accurate)</string>
+    <string name="setting_flycast_anisotropic_filtering">Anisotropic Filtering</string>
+    <string name="value_flycast_af_off">Off</string>
+    <string name="value_flycast_af_2x">2x</string>
+    <string name="value_flycast_af_4x">4x</string>
+    <string name="value_flycast_af_8x">8x</string>
+    <string name="value_flycast_af_16x">16x</string>
+
+    <!-- Cemu settings -->
+    <string name="setting_cemu_cpu_mode">CPU Recompiler Mode</string>
+    <string name="value_cemu_cpu_multi">Multi-Core Recompiler (Recommended)</string>
+    <string name="value_cemu_cpu_dual">Dual-Core Recompiler</string>
+    <string name="value_cemu_cpu_single">Single-Core Recompiler</string>
+    <string name="value_cemu_cpu_interpreter">Interpreter (Slow)</string>
+    <string name="setting_cemu_screen_view">Screen View</string>
+    <string name="value_cemu_screen_tv">TV View</string>
+    <string name="value_cemu_screen_pad">GamePad View</string>
+    <string name="value_cemu_screen_side_by_side">Side by Side</string>
+    <string name="setting_cemu_audio_volume">Audio Volume</string>
+    <string name="value_cemu_volume_100">100%</string>
+    <string name="value_cemu_volume_80">80%</string>
+    <string name="value_cemu_volume_60">60%</string>
+    <string name="value_cemu_volume_40">40%</string>
+    <string name="value_cemu_volume_20">20%</string>
+    <string name="value_cemu_volume_0">Mute</string>
+
+</resources>
